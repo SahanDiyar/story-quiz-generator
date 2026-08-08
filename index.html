@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Story & Question Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6f9; color: #333; margin: 0; padding: 20px; }
+        .card { background: white; max-width: 750px; margin: 40px auto; padding: 35px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        h2 { margin-top: 0; color: #111; font-size: 24px; }
+        p.subtitle { color: #666; font-size: 14px; margin-bottom: 25px; }
+        label { display: block; font-weight: bold; font-size: 14px; margin-bottom: 8px; color: #333; }
+        textarea { width: 100%; height: 130px; padding: 12px; margin-bottom: 20px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; box-sizing: border-box; resize: vertical; }
+        input[type="number"] { width: 100%; padding: 10px; margin-bottom: 25px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; box-sizing: border-box; }
+        .generate-btn { background: #5856D6; color: white; border: none; width: 100%; padding: 12px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        .generate-btn:hover { background: #4745b8; }
+        
+        #outputSection { display: none; margin-top: 30px; border-top: 1px solid #eaeaea; padding-top: 20px; }
+        .ready-title { font-weight: bold; font-size: 15px; margin-bottom: 12px; color: #222; }
+        .download-btn { display: inline-block; background: #10B981; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px; margin-bottom: 20px; }
+        .download-btn:hover { background: #059669; }
+        
+        .preview-label { font-size: 13px; font-weight: bold; color: #555; margin-bottom: 6px; }
+        pre { background: #f8f9fa; border: 1px solid #e1e4e8; border-radius: 6px; padding: 15px; max-height: 250px; overflow-y: auto; font-size: 13px; color: #333; margin: 0; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>Story & Question Generator</h2>
+        <p class="subtitle">Enter your story and the number of questions to generate your export file.</p>
+        
+        <label for="storyText">Story</label>
+        <textarea id="storyText" placeholder="Paste your story here..."></textarea>
+        
+        <label for="numQuestions">Number of Questions</label>
+        <input type="number" id="numQuestions" value="6" min="1" max="20">
+        
+        <button class="generate-btn" onclick="generateFile()">Generate File</button>
+
+        <div id="outputSection">
+            <div class="ready-title">Your file is ready:</div>
+            <a id="downloadLink" class="download-btn" download="story_data.js">Download story_data.js</a>
+            
+            <div class="preview-label">Preview:</div>
+            <pre><code id="jsonPreview"></code></pre>
+        </div>
+    </div>
+
+    <script>
+        async function generateFile() {
+            const text = document.getElementById('storyText').value;
+            const numQuestions = document.getElementById('numQuestions').value;
+            const outputSection = document.getElementById('outputSection');
+            const jsonPreview = document.getElementById('jsonPreview');
+            const downloadLink = document.getElementById('downloadLink');
+
+            if (!text) {
+                alert('Please enter a story first!');
+                return;
+            }
+
+            outputSection.style.display = 'block';
+            jsonPreview.innerText = 'Generating file with AI, please wait...';
+
+            try {
+                const response = await fetch('/api/generate-story-quiz', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, numQuestions })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    jsonPreview.innerText = `Error: ${data.error}`;
+                    return;
+                }
+
+                const jsonString = JSON.stringify(data, null, 2);
+                jsonPreview.innerText = jsonString;
+
+                const blob = new Blob([jsonString], { type: 'application/javascript' });
+                const fileUrl = URL.createObjectURL(blob);
+                downloadLink.href = fileUrl;
+
+            } catch (err) {
+                jsonPreview.innerText = 'Failed to connect to the backend server.';
+            }
+        }
+    </script>
+</body>
+</html>
