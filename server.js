@@ -18,20 +18,34 @@ app.post('/api/generate-story-quiz', async (req, res) => {
             return res.status(400).json({ error: 'Story text and number of questions are required.' });
         }
 
-        const prompt = `Based on the following story, generate exactly ${numQuestions} vocabulary/comprehension questions. 
-Return ONLY a valid JSON array. No markdown formatting, no backticks, just raw JSON.
-Each object in the array must have these exact keys:
-- "q": Context sentence with the target word *highlighted* with asterisks.
-- "v": CEFR vocabulary level (e.g., "B2", "A2", "C1").
-- "e": Correct English option followed by 4 distractors, separated by vertical bars (|). Example: "Correct Option|Distractor 1|Distractor 2|Distractor 3|Distractor 4"
-- "k": Kurdish translations of the options in the exact same order, separated by vertical bars (|).
-- "a": Arabic translations of the options in the exact same order, separated by vertical bars (|).
+const prompt = `Based on the following story, generate a quiz object with a title and exactly ${numQuestions} questions for Chapter 1.
+You MUST output ONLY valid JSON using double quotes for all keys and string values. No trailing commas.
+CRITICAL RULES:
+1. For the "k" field, use authentic Central Kurdish (Sorani) script (Arabic/Kurdish alphabet).
+2. ORDER MATTERS: The FIRST item in "e", "k", and "a" MUST be the correct translation/definition for the target word. The remaining items after the first "|" pipe are wrong distractors.
+
+Structure:
+{
+  "title": "Story Title",
+  "chapters": {
+    "1": [
+      {
+        "q": "Context sentence with *target* word.",
+        "v": "B1",
+        "e": "Correct English definition|Distractor 1|Distractor 2|Distractor 3|Distractor 4",
+        "k": "Correct Kurdish translation|Distractor 1|Distractor 2|Distractor 3|Distractor 4",
+        "a": "Correct Arabic translation|Distractor 1|Distractor 2|Distractor 3|Distractor 4"
+      }
+    ]
+  }
+}
+Return raw JSON only, no markdown, no backticks.
 
 Story: "${text}"`;
 
         const chatCompletion = await groq.chat.completions.create({
             messages: [
-                { role: "system", content: "You are an assistant that outputs only valid JSON arrays." },
+                { role: "system", content: "You are a JSON generator. Output strictly valid JSON." },
                 { role: "user", content: prompt }
             ],
             model: 'llama-3.3-70b-versatile',
@@ -40,7 +54,8 @@ Story: "${text}"`;
         let responseText = chatCompletion.choices[0]?.message?.content || '';
         responseText = responseText.replace(/^```json\s*/, '').replace(/^```\s*/, '').replace(/\s*```$/, '').trim();
 
-        const quizData = JSON.parse(responseText);
+        const cleanedText = responseText.replace(/[\u0000-\u001F]+/g, " ");
+        const quizData = JSON.parse(cleanedText);
         res.json(quizData);
 
     } catch (error) {
