@@ -18,11 +18,12 @@ app.post('/api/generate-story-quiz', async (req, res) => {
             return res.status(400).json({ error: 'Story text and number of questions are required.' });
         }
 
-const prompt = `Based on the following story, generate a quiz object with a title and exactly ${numQuestions} questions for Chapter 1.
+        const prompt = `Based on the following story, generate a quiz object with a title and exactly ${numQuestions} questions for Chapter 1.
 You MUST output ONLY valid JSON using double quotes for all keys and string values. No trailing commas.
 CRITICAL RULES:
-1. For the "k" field, use authentic Central Kurdish (Sorani) script (Arabic/Kurdish alphabet).
-2. ORDER MATTERS: The FIRST item in "e", "k", and "a" MUST be the correct translation/definition for the target word. The remaining items after the first "|" pipe are wrong distractors.
+1. For the "q" field, you MUST wrap the target vocabulary word with asterisks (e.g., "The old man who owned the *house* smiled...") so it highlights properly in the app.
+2. For the "k" field, use authentic Central Kurdish (Sorani) script (Arabic/Kurdish alphabet).
+3. ORDER MATTERS: The FIRST item in "e", "k", and "a" MUST be the correct translation/definition for the target word. The remaining items after the first "|" pipe are wrong distractors.
 
 Structure:
 {
