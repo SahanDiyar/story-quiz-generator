@@ -12,6 +12,7 @@
         textarea, input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         button { background-color: #5c6bc0; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-top: 20px; width: 100%; font-size: 16px; }
         button:hover { background-color: #3f51b5; }
+        /* Hidden by default until generation is complete */
         #outputSection { margin-top: 25px; display: none; }
         pre { background: #263238; color: #80cbc4; padding: 15px; border-radius: 4px; overflow-x: auto; max-height: 300px; }
         .download-btn { display: inline-block; background-color: #2e7d32; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; margin-top: 10px; font-weight: bold; }
@@ -52,8 +53,8 @@
                 return;
             }
 
-            outputSection.style.display = 'block';
-            jsonPreview.innerText = 'Generating file with AI, please wait...';
+            // Keep output section hidden while waiting for AI generation
+            outputSection.style.display = 'none';
 
             try {
                 const response = await fetch('/api/generate-story-quiz', {
@@ -65,21 +66,23 @@
                 const data = await response.json();
 
                 if (data.error) {
-                    jsonPreview.innerText = `Error: ${data.error}`;
+                    alert(`Error: ${data.error}`);
                     return;
                 }
 
                 const jsonString = JSON.stringify(data, null, 2);
                 const fileContent = `export default ${jsonString};`;
                 
+                // Only reveal everything once the preview content is fully ready
                 jsonPreview.innerText = fileContent;
+                outputSection.style.display = 'block';
 
                 const blob = new Blob([fileContent], { type: 'application/javascript' });
                 const fileUrl = URL.createObjectURL(blob);
                 downloadLink.href = fileUrl;
 
             } catch (err) {
-                jsonPreview.innerText = 'Failed to connect to the backend server.';
+                alert('Failed to connect to the backend server.');
             }
         }
     </script>

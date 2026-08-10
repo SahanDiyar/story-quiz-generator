@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const Groq = require('groq-sdk');
+const JSON5 = require('json5');
 
 const app = express();
 const port = 3000;
@@ -19,7 +20,6 @@ app.post('/api/generate-story-quiz', async (req, res) => {
         }
 
         const prompt = `Based on the following story, generate a quiz object with a title and exactly ${numQuestions} questions for Chapter 1.
-You MUST output ONLY valid JSON using double quotes for all keys and string values. No trailing commas.
 CRITICAL RULES:
 1. For the "q" field, you MUST wrap the target vocabulary word with asterisks (e.g., "The old man who owned the *house* smiled...") so it highlights properly in the app.
 2. For the "k" field, use authentic Central Kurdish (Sorani) script (Arabic/Kurdish alphabet).
@@ -56,7 +56,9 @@ Story: "${text}"`;
         responseText = responseText.replace(/^```json\s*/, '').replace(/^```\s*/, '').replace(/\s*```$/, '').trim();
 
         const cleanedText = responseText.replace(/[\u0000-\u001F]+/g, " ");
-        const quizData = JSON.parse(cleanedText);
+        
+        // Use JSON5 to safely parse even if the AI misses a quote
+        const quizData = JSON5.parse(cleanedText);
         res.json(quizData);
 
     } catch (error) {
